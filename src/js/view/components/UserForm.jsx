@@ -7,127 +7,137 @@
 //
 
 import styles from "../../../css/form.module.css"
-import {useEffect, useMemo, useState} from "react";
-import {ApplicationConstants} from "../../ApplicationConstants";
-import {UserVO} from "../../model/valueObject/UserVO.js";
+import {useEffect, useState} from "react";
+import PropTypes from "prop-types";
+import {ApplicationConstants} from "../../ApplicationConstants.js";
+import useFormViewModel from "../useFormViewModel.js";
 
-export class UserFormEvents {
-	static SAVE   = "events/user/form/save";
-	static UPDATE = "events/user/form/update";
-	static CANCEL = "events/user/form/cancel";
-}
+/**
+ * UserForm component
+ *
+ * @param {Object} props
+ * @param {User} props.user
+ * @param {function} props.setUser
+ * @returns {JSX.Element}
+ */
+export const UserForm = ({user, setUser, init, NONE_SELECTED}) => {
 
-export const UserForm = () => {
-
-	const [departments, setDepartments] = useState([]); // UI Data
-	const [user, setUser] = useState(new UserVO()); // UserVO/Service/Input/Form Data
-	const [editMode, setEditMode] = useState(false);
-	const [error, setError] = useState(null);
-
-	/**
-	 * @typedef {Object} UserForm
-	 * @property {(departments: DeptEnum[]) => void} setDepartments
-	 * @property {(user: UserVO) => void} setUser
-	 * @property {(error: string) => void} setError
-	 * @property {() => void} reset
-	 */
-	const component = useMemo(() => ({
-		setDepartments: setDepartments,
-		setUser: (u) => {
-			setEditMode(u.username !== "");
-			setUser(u);
-		},
-		setError: setError,
-		reset: () => {
-			setEditMode(false);
-			setUser(new UserVO());
-		}
-	}), [setDepartments, setUser, setError]);
+	const {findAllDepartmentsSelector, findByIdSelector, saveSelector, updateSelector,
+		findAllDepartments, findById, save, update} = useFormViewModel();
+	const [formData, setFormData] = useState({...user, confirm: ""}); // Form Data
 
 	useEffect(() => {
-		dispatchEvent(new CustomEvent(ApplicationConstants.USER_FORM_MOUNTED, {detail: component}));
-		return () => {
-			dispatchEvent(new CustomEvent(ApplicationConstants.USER_FORM_UNMOUNTED));
+		(async () => {
+			if (findAllDepartmentsSelector.status === ApplicationConstants.IDLE) {
+				await findAllDepartments();
+			} else if(findAllDepartmentsSelector.status === ApplicationConstants.SUCCEEDED) {
+				if (user.id) {
+					await findById(user.id);
+				} else {
+					reset();
+				}
+			}
+		})();
+	}, [findAllDepartmentsSelector.status, user.id]);
+
+	useEffect(() => {
+		if (findByIdSelector.status === ApplicationConstants.SUCCEEDED) {
+			let data = findByIdSelector.data;
+			setFormData({...data, confirm: data.password});
 		}
-	}, [component]);
+	}, [findByIdSelector.status, findByIdSelector.data]);
+
+	useEffect(() => {
+		if (updateSelector.status === ApplicationConstants.SUCCEEDED || saveSelector.status === ApplicationConstants.SUCCEEDED) {
+			reset();
+		}
+	}, [updateSelector.status, saveSelector.status]);
 
 	const onChange = (event) => {
 		const {id, value} = event.target;
-		setUser(state => ({ // update fields
-			...state, [id]: id === "department" ? departments.find(d => d.id === parseInt(value, 10)) : value
+		setFormData((state) => ({ // update fields
+			...state, [id]: id === "department" ? findAllDepartmentsSelector.data.find(d => d.id === parseInt(value)) : value
 		}));
 	}
 
-	const onSave = () => {
-		delete user.roles; // update user fields only without roles, roles are saved/updated separately.
-		const type = editMode === false ? UserFormEvents.SAVE : UserFormEvents.UPDATE;
-		dispatchEvent(new CustomEvent(type, {detail: user}));
-		setUser(new UserVO());
+	const onSave = async () => {
+		user.id ? await update(formData) : await save(formData);
 	}
 
-	const onCancel = () => {
-		setEditMode(false);
-		setUser(new UserVO());
-		dispatchEvent(new CustomEvent(UserFormEvents.CANCEL));
+	const reset = () => {
+		setUser(init());
+		setFormData({...init(), confirm: "", department: NONE_SELECTED});
+	}
+
+	const isValid = user => {
+		return user.username !== "" && user.first !== "" && user.last !== "" && user.email !== "" &&
+			user.password !== "" && user.password === user.confirm && user.department.id !== 0;
 	}
 
 	return (
 		<section id="form">
-			{error ? (
-				<div className={styles.form}>
-					<header><h2>User Form</h2></header>
-					<main>Error: {error.message}</main>
-				</div>
-			) : (
-				<div className={styles.form}>
-					<header>
-						<h2>User Form</h2>
-					</header>
-					<main>
-						<ul>
-							<li>
-								<label htmlFor="first">First Name:</label>
-								<input id="first" type="text" value={user.first} onChange={onChange} required/>
-							</li>
-							<li>
-								<label htmlFor="last">Last Name:</label>
-								<input id="last" type="text" value={user.last} onChange={onChange} required/>
-							</li>
-							<li>
-								<label htmlFor="email">Email:</label>
-								<input id="email" type="email" value={user.email} onChange={onChange} required/>
-							</li>
-							<li>
-								<label htmlFor="username">Username:</label>
-								<input id="username" type="text" value={user.username} onChange={onChange} required/>
-							</li>
-							<li>
-								<label htmlFor="password">Password:</label>
-								<input id="password" type="password" value={user.password} onChange={onChange} required/>
-							</li>
-							<li>
-								<label htmlFor="confirm">Confirm:</label>
-								<input id="confirm" type="password" value={user.confirm} onChange={onChange} required/>
-							</li>
-							<li>
-								<label htmlFor="department">Department:</label>
-								<select id="department" value={user.department.id} onChange={onChange}>
-									{departments.map(department => (
-										<option key={`department_${department.id}`}
-										        value={department.id}>{department.name}</option>
-									))}
-								</select>
-							</li>
-						</ul>
-					</main>
-					<footer>
-						<button className="primary" disabled={!UserVO.isValid(user)}
-						        onClick={() => onSave()}>{editMode === false ? "Save" : "Update"}</button>
-						<button className="outline-primary" onClick={() => onCancel()}>Cancel
-						</button>
-					</footer>
-				</div>
-			)}
+			<div className={styles.form}>
+				<header>
+					<h2>User Form</h2>
+				</header>
+				<main>
+					<ul>
+						<li>
+							<label htmlFor="first">First Name:</label>
+							<input id="first" type="text" value={formData.first} onChange={onChange} required/>
+						</li>
+						<li>
+							<label htmlFor="last">Last Name:</label>
+							<input id="last" type="text" value={formData.last} onChange={onChange} required/>
+						</li>
+						<li>
+							<label htmlFor="email">Email:</label>
+							<input id="email" type="email" value={formData.email} onChange={onChange} required/>
+						</li>
+						<li>
+							<label htmlFor="username">Username:</label>
+							<input id="username" type="text" value={formData.username} onChange={onChange} required/>
+						</li>
+						<li>
+							<label htmlFor="password">Password:</label>
+							<input id="password" type="password" value={formData.password} onChange={onChange} required/>
+						</li>
+						<li>
+							<label htmlFor="confirm">Confirm:</label>
+							<input id="confirm" type="password" value={formData.confirm} onChange={onChange} required/>
+						</li>
+						<li>
+							<label htmlFor="department">Department:</label>
+							<select id="department" value={formData.department.id} onChange={onChange} required>
+								<option value={NONE_SELECTED.id}>{NONE_SELECTED.name}</option>
+								{findAllDepartmentsSelector.status === ApplicationConstants.SUCCEEDED && findAllDepartmentsSelector.data.map(department => (
+									<option key={`department_${department.id}`} value={department.id}>{department.name}</option>
+								))}
+							</select>
+						</li>
+					</ul>
+				</main>
+				<footer>
+					<div className={styles.error}>
+						{findAllDepartmentsSelector.status === ApplicationConstants.FAILED && findAllDepartmentsSelector.error.message}
+						{findByIdSelector.status === ApplicationConstants.FAILED && findByIdSelector.error.message}
+						{saveSelector.status === ApplicationConstants.FAILED && saveSelector.error.message}
+						{updateSelector.status === ApplicationConstants.FAILED && updateSelector.error.message}
+					</div>
+					<button className="primary" disabled={!isValid(formData)} onClick={() => onSave()}>
+						{user.id ? (updateSelector.status === ApplicationConstants.LOADING ? "Updating..." : "Update") :
+							(saveSelector.status === ApplicationConstants.LOADING ? "Saving..." : "Save")}
+					</button>
+					<button className="outline-primary" onClick={() => reset()}>Cancel</button>
+				</footer>
+			</div>
 		</section>
 	)
+};
+
+UserForm.propTypes = {
+	user: PropTypes.object.isRequired,
+	setUser: PropTypes.func.isRequired,
+	init: PropTypes.func.isRequired,
+	NONE_SELECTED: PropTypes.object.isRequired,
 };

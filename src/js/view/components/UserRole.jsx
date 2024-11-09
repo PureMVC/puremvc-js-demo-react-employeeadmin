@@ -7,101 +7,100 @@
 //
 
 import styles from "../../../css/role.module.css"
-import {useEffect, useMemo, useState} from "react";
-import {ApplicationConstants} from "../../ApplicationConstants";
-import {RoleEnum} from "../../model/enum/RoleEnum.js";
+import {useEffect, useState} from "react";
+import {useDispatch} from "react-redux";
+import PropTypes from "prop-types";
+import {ApplicationConstants} from "../../ApplicationConstants.js";
+import useRoleViewModel from "../useRoleViewModel.js";
 
-export class UserRoleEvents {
-	static UPDATE = "events/user/role/update";
-}
+/**
+ * UserRole component
+ *
+ * @param {Object} props - The component props
+ * @param {User} props.user - The user object
+ * @returns {JSX.Element} The rendered component
+ */
+export const UserRole = ({user, NONE_SELECTED}) => {
 
-export const UserRole = () => {
-
-	const [roles, setRoles] = useState(/** @type RoleEnum[] */ []); // UI Data
-	const [user, setUser] = useState(/** @type UserVO */ null); // UserVO/Service Data
-	const [role, setRole] = useState(RoleEnum.NONE_SELECTED); // Input/Form Data
-	const [error, setError] = useState(null);
-
-	/**
-	 * @typedef {Object} UserRole
-	 * @property {(roles: RoleEnum[]) => void} setRoles
-	 * @property {(user: User) => void} setUser
-	 * @property {(error: string) => void} setError
-	 * @property {() => void} reset
-	 */
-	const component = useMemo(() => ({
-		setRoles: setRoles,
-		setUser: (u) => {
-			setRole(RoleEnum.NONE_SELECTED);
-			setUser(u);
-		},
-		setError: setError,
-		reset: () => {
-			setRole(RoleEnum.NONE_SELECTED);
-			setUser(null);
-		}
-	}), [setUser, setError]);
+	const {findAllSelector, findByIdSelector, addSelector, removeSelector,
+		findAll, findById, add, remove} = useRoleViewModel();
+	const [formData, setFormData] = useState(NONE_SELECTED); // Form Data
 
 	useEffect(() => {
-		dispatchEvent(new CustomEvent(ApplicationConstants.USER_ROLE_MOUNTED, {detail: component}));
-		return () => {
-			dispatchEvent(new CustomEvent(ApplicationConstants.USER_ROLE_UNMOUNTED));
-		}
-	}, [component]);
+		(async () => {
+			if(findAllSelector.status === ApplicationConstants.IDLE) {
+				await findAll();
+			} else if (findAllSelector.status === ApplicationConstants.SUCCEEDED) {
+				await findById(user.id ? user.id : 0);
+			}
+		})();
+	}, [findAllSelector.status, user.id]);
+
+	useEffect(() => {
+		(async () => {
+			if (addSelector.status === ApplicationConstants.SUCCEEDED ||
+				removeSelector.status === ApplicationConstants.SUCCEEDED) {
+				reset();
+			}
+		})();
+	}, [addSelector.status, removeSelector.status]);
 
 	const onChange = (event) => {
-		setRole(roles.find(r => r.id === parseInt(event.target.value)));
+		setFormData(findAllSelector.data.find(role => role.id === parseInt(event.target.value)));
 	}
 
-	const onAdd = () => {
-		setUser(state => {
-			const data = {...state, roles: [...state.roles, roles.find(r => r.id === role.id)]};
-			dispatchEvent(new CustomEvent(UserRoleEvents.UPDATE, {detail: data}));
-			return data;
-		});
+	const onAdd = async () => {
+		await add(user.id, formData);
 	};
 
-	const onRemove = () => {
-		setUser(state => {
-			const data = {...state, roles: user.roles.filter(r => r.id !== role.id)};
-			dispatchEvent(new CustomEvent(UserRoleEvents.UPDATE, {detail: data}));
-			return data;
-		});
+	const onRemove = async () => {
+		await remove(user.id, formData);
 	};
+
+	const reset = () => {
+		setFormData(NONE_SELECTED);
+	}
 
 	return (
 		<section id="role">
-			{error ? (
-				<div className={styles.role}>
-					<header><h2>User Roles</h2></header>
-					<main>Error: {error.message}</main>
-				</div>
-			) : (
-				<div className={styles.role}>
-					<header>
-						<h2>User Roles</h2>
-					</header>
-					<main>
-						<ul>
-							{user && user.roles.map(r => (
-								<li key={`role_${r.id}`}>{r.name}</li>
-							))}
-						</ul>
-					</main>
-					<footer>
-						<label htmlFor="roles"></label>
-						<select id="roles" value={role.id} onChange={onChange} disabled={user === null}>
-							{roles.map(r => (
-								<option key={`role_option${r.id}`} value={r.id}>{r.name}</option>
-							))}
-						</select>
-						<button id="add" className="primary" onClick={() => onAdd()}
-						        disabled={role === RoleEnum.NONE_SELECTED}>Add</button>
-						<button id="remove" className="outline-primary" onClick={() => onRemove()}
-						        disabled={role === RoleEnum.NONE_SELECTED}>Remove</button>
-					</footer>
-				</div>
-			)}
+			<div className={styles.role}>
+				<header>
+					<h2>User Roles</h2>
+				</header>
+				<main>
+					<ul>
+						{findByIdSelector.status === ApplicationConstants.SUCCEEDED && findByIdSelector.data.map(role => (
+							<li key={`role_${role.id}`}>{role.name}</li>
+						))}
+					</ul>
+				</main>
+				<footer>
+					<label htmlFor="roles"></label>
+					<select id="roles" value={formData.id} onChange={onChange}>
+						<option value={NONE_SELECTED.id}>{NONE_SELECTED.name}</option>
+						{findAllSelector.status === ApplicationConstants.SUCCEEDED && findAllSelector.data.map(role => (
+							<option key={`role_option${role.id}`} value={role.id}>{role.name}</option>
+						))}
+					</select>
+
+					<button id="add" className="primary" onClick={() => onAdd()}
+					        disabled={formData.id === NONE_SELECTED.id}>Add</button>
+					<button id="remove" className="outline-primary" onClick={() => onRemove()}
+					        disabled={formData.id === NONE_SELECTED.id}>Remove</button>
+
+					<div className={styles.error}>
+						{findAllSelector.status === ApplicationConstants.FAILED && findAllSelector.error.message}
+						{findByIdSelector.status === ApplicationConstants.FAILED && findByIdSelector.error.message}
+						{addSelector.status === ApplicationConstants.FAILED && addSelector.error.message}
+						{removeSelector.status === ApplicationConstants.FAILED && removeSelector.error.message}
+					</div>
+				</footer>
+			</div>
 		</section>
 	);
+};
+
+UserRole.propTypes = {
+	user: PropTypes.object.isRequired,
+	NONE_SELECTED: PropTypes.object.isRequired,
 };
