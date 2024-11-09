@@ -9,35 +9,34 @@
 import styles from "../../../css/role.module.css"
 import {useEffect, useMemo, useState} from "react";
 import {ApplicationConstants} from "../../ApplicationConstants";
-import {RoleEnum} from "../../model/enum/RoleEnum.js";
-
-export class UserRoleEvents {
-	static UPDATE = "events/user/role/update";
-}
+import {Role} from "../../model/valueObject/Role";
 
 export const UserRole = () => {
 
-	const [roles, setRoles] = useState(/** @type RoleEnum[] */ []); // UI Data
-	const [user, setUser] = useState(/** @type UserVO */ null); // UserVO/Service Data
-	const [role, setRole] = useState(RoleEnum.NONE_SELECTED); // Input/Form Data
+	const [roles, setRoles] = useState(/** @type Role[] */ []); // UI Data
+	const [user, setUser] = useState(/** @type User */ null); // User/Service Data
+	const [role, setRole] = useState(Role.NONE_SELECTED); // Input/Form Data
 	const [error, setError] = useState(null);
 
 	/**
 	 * @typedef {Object} UserRole
-	 * @property {(roles: RoleEnum[]) => void} setRoles
+	 * @property {string} UPDATE
+	 * @property {(roles: Role[]) => void} setRoles
 	 * @property {(user: User) => void} setUser
 	 * @property {(error: string) => void} setError
 	 * @property {() => void} reset
 	 */
 	const component = useMemo(() => ({
+		UPDATE: "events/user/role/update",
+
 		setRoles: setRoles,
 		setUser: (u) => {
-			setRole(RoleEnum.NONE_SELECTED);
+			setRole(Role.NONE_SELECTED);
 			setUser(u);
 		},
 		setError: setError,
 		reset: () => {
-			setRole(RoleEnum.NONE_SELECTED);
+			setRole(Role.NONE_SELECTED);
 			setUser(null);
 		}
 	}), [setUser, setError]);
@@ -56,7 +55,7 @@ export const UserRole = () => {
 	const onAdd = () => {
 		setUser(state => {
 			const data = {...state, roles: [...state.roles, roles.find(r => r.id === role.id)]};
-			dispatchEvent(new CustomEvent(UserRoleEvents.UPDATE, {detail: data}));
+			dispatchEvent(new CustomEvent(component.UPDATE, {detail: data}));
 			return data;
 		});
 	};
@@ -64,7 +63,7 @@ export const UserRole = () => {
 	const onRemove = () => {
 		setUser(state => {
 			const data = {...state, roles: user.roles.filter(r => r.id !== role.id)};
-			dispatchEvent(new CustomEvent(UserRoleEvents.UPDATE, {detail: data}));
+			dispatchEvent(new CustomEvent(component.UPDATE, {detail: data}));
 			return data;
 		});
 	};
@@ -91,14 +90,15 @@ export const UserRole = () => {
 					<footer>
 						<label htmlFor="roles"></label>
 						<select id="roles" value={role.id} onChange={onChange} disabled={user === null}>
+							<option value={Role.NONE_SELECTED.id}>{Role.NONE_SELECTED.name}</option>
 							{roles.map(r => (
 								<option key={`role_option${r.id}`} value={r.id}>{r.name}</option>
 							))}
 						</select>
 						<button id="add" className="primary" onClick={() => onAdd()}
-						        disabled={role === RoleEnum.NONE_SELECTED}>Add</button>
+						        disabled={role === Role.NONE_SELECTED}>Add</button>
 						<button id="remove" className="outline-primary" onClick={() => onRemove()}
-						        disabled={role === RoleEnum.NONE_SELECTED}>Remove</button>
+						        disabled={role === Role.NONE_SELECTED}>Remove</button>
 					</footer>
 				</div>
 			)}

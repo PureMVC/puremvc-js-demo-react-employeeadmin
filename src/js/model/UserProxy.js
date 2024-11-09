@@ -7,53 +7,104 @@
 //
 
 import {Proxy} from "@puremvc/puremvc-js-multicore-framework";
-import {DeptEnum} from "./enum/DeptEnum.js";
+import {ApplicationConstants} from "../ApplicationConstants";
+import {User} from "./valueObject/User";
+import {Department} from "./valueObject/Department";
+import {firestore} from "./connections/firebase.js";
+import {collection, onSnapshot} from "firebase/firestore";
+import {ApplicationFacade} from "../ApplicationFacade.js";
 
 export class UserProxy extends Proxy {
 
     static get NAME() { return "UserProxy" }
-a
-    constructor(data) {
-        super(UserProxy.NAME, data);
+
+    constructor() {
+        super(UserProxy.NAME, null);
+    }
+
+    async onRegister() {
+        onSnapshot(collection(firestore, "users"), (snapshot) => {
+            const data = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            this.sendNotification(ApplicationFacade.LIST_USERS, data);
+        });
+    }
+
+    onRemove() {
+        this.unsubscribe();
     }
 
     async findAllUsers(){
-        return new Promise(resolve => {
-            resolve(this.users);
+        const response = await fetch(`${ApplicationConstants.API_URL}/users`, {method: "GET"});
+        if (response.status === 200) {
+            const json = await response.json();
+            return json.map(user => User.fromJson(user));
+        } else {
+            const error = await response.json();
+            throw new Error(error.message);
+        }
+    }
+
+    async findUserById(id) {
+        const response = await fetch(`${ApplicationConstants.API_URL}/users/${id}`, {method: "GET"});
+        if (response.status === 200) {
+            const json = await response.json();
+            return User.fromJson(json);
+        } else {
+            const error = await response.json();
+            throw new Error(error.message);
+        }
+    }
+
+    async add(user) {
+        const response = await fetch(`${ApplicationConstants.API_URL}/users`, { method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(user)
         });
+
+        if (response.status === 201) {
+            const json = await response.json();
+            return User.fromJson(json);
+        } else {
+            const error = await response.json();
+            throw new Error(error.message);
+        }
     }
 
-    findUserByUsername(username) {
-        return new Promise(resolve => {
-            resolve(this.users.find(u => u.username === username));
+    async update(user) {
+        const response = await fetch(`${ApplicationConstants.API_URL}/users/${user.id}`, { method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(user)
         });
+
+        if (response.status === 200) {
+            const json = await response.json();
+            return User.fromJson(json);
+        } else {
+            const error = await response.json();
+            throw new Error(error.message);
+        }
     }
 
-    add(user) {
-        this.users.push(user);
-    }
-
-    update(user) {
-        this.users = this.users.map(u => u.username === user.username ? user : u);
-    }
-
-    deleteUserByUsername(username) {
-        this.users = this.users.filter(u => u.username !== username);
+    async deleteUserById(id) {
+        const response = await fetch(`${ApplicationConstants.API_URL}/users/${id}`, {method: "DELETE"});
+        if (response.status !== 204) {
+            const error = await response.json();
+            throw new Error(error.message);
+        }
     }
 
     async findAllDepartments() {
-        return new Promise(resolve => {
-            resolve(DeptEnum.comboList);
-        });
-    }
-
-    /** @returns {User[]} */
-    get users() {
-        return this.data;
-    }
-
-    set users(value) {
-        this.data = value;
+        const response = await fetch(`${ApplicationConstants.API_URL}/departments`, {method: "GET"});
+        if (response.status === 200) {
+            const json = await response.json();
+            return json.map(department => Department.fromJson(department));
+        } else {
+            const error = await response.json();
+            throw new Error(error.message);
+        }
     }
 
 }

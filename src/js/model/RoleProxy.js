@@ -7,44 +7,52 @@
 //
 
 import {Proxy} from "@puremvc/puremvc-js-multicore-framework";
-import {RoleEnum} from "./enum/RoleEnum.js";
-import {RoleVO} from "./valueObject/RoleVO.js";
+import {ApplicationConstants} from "../ApplicationConstants";
+import {Role} from "./valueObject/Role";
 
 export class RoleProxy extends Proxy {
 
 	static get NAME() { return "RoleProxy" }
 
-	constructor(data) {
-		super(RoleProxy.NAME, data);
+	constructor() {
+		super(RoleProxy.NAME, null);
 	}
 
-	findAllRoles() {
-		return new Promise(resolve => {
-			resolve(RoleEnum.comboList);
+	async findAllRoles() {
+		const response = await fetch(`${ApplicationConstants.API_URL}/roles`, {method: "GET"});
+		if (response.status === 200) {
+			const json = await response.json();
+			return json.map(role => Role.fromJson(role));
+		} else {
+			const error = await response.json();
+			throw new Error(error.message);
+		}
+	}
+
+	async findRolesById(id) {
+		const response = await fetch(`${ApplicationConstants.API_URL}/users/${id}/roles`, {method: "GET"});
+		if (response.status === 200) {
+			const json = await response.json();
+			return json.map(role => Role.fromJson(role));
+		} else {
+			const error = await response.json();
+			throw new Error(error.message);
+		}
+	}
+
+	async updateRolesById(id, roles) {
+		const response = await fetch(`${ApplicationConstants.API_URL}/users/${id}/roles`, { method: "PUT",
+			headers: {"content-type": "application/json"},
+			body: JSON.stringify(roles)
 		});
-	}
 
-	findRolesByUsername(username) {
-		return new Promise(resolve => {
-			let result = this.roles.find(r => r.username === username);
-			resolve(result ? result : new RoleVO(username, []));
-		});
-	}
-
-	updateRolesByUsername(username, roles) {
-		return new Promise(resolve => {
-			if (this.roles.find(r => r.username === username)) {
-				this.data = this.roles.map(r => r.username === username ? new RoleVO(username, roles) : r);
-			} else {
-				this.roles.push(new RoleVO(username, roles));
-			}
-			resolve(this.roles.find(r => r.username === username));
-		});
-	}
-
-	/** @returns {RoleVO[]} */
-	get roles() {
-		return this.data;
+		if (response.status === 200) {
+			const json = await response.json();
+			return json.map(role => Role.fromJson(role));
+		} else {
+			const error = await response.json();
+			throw new Error(error.message);
+		}
 	}
 
 }

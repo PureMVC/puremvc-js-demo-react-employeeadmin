@@ -9,7 +9,6 @@
 import {Mediator} from "@puremvc/puremvc-js-multicore-framework";
 import {ApplicationFacade} from "../ApplicationFacade";
 import {UserProxy} from "../model/UserProxy";
-import {UserListEvents} from "./components/UserList.jsx";
 
 export class UserListMediator extends Mediator {
 
@@ -17,12 +16,13 @@ export class UserListMediator extends Mediator {
 
     listeners = null;
 
+    /** @param {UserList} component */
     constructor(component) {
         super(UserListMediator.NAME, component);
         this.listeners = {
-            [UserListEvents.NEW]: event => this.onNew(event.detail),
-            [UserListEvents.SELECT]: event => this.onSelect(event.detail),
-            [UserListEvents.DELETE]: event => this.onDelete(event.detail)
+            [component.NEW]: event => this.onNew(event.detail),
+            [component.SELECT]: event => this.onSelect(event.detail),
+            [component.DELETE]: event => this.onDelete(event.detail)
         };
     }
 
@@ -30,10 +30,10 @@ export class UserListMediator extends Mediator {
         Object.keys(this.listeners).forEach(key => window.addEventListener(key, this.listeners[key]));
 
         /** @type {UserProxy} */
-        this.userProxy = this.facade.retrieveProxy(UserProxy.NAME);
-        this.userProxy.findAllUsers()
-            .then(users => this.component.setUsers(users))
-            .catch(error => this.component.setError(error));
+        // this.userProxy = this.facade.retrieveProxy(UserProxy.NAME);
+        // this.userProxy.findAllUsers()
+        //     .then(users => this.component.setUsers(users))
+        //     .catch(error => this.component.setError(error));
     }
 
     onRemove() {
@@ -42,6 +42,7 @@ export class UserListMediator extends Mediator {
 
     listNotificationInterests() {
         return [
+            ApplicationFacade.LIST_USERS,
             ApplicationFacade.USER_SAVED,
             ApplicationFacade.USER_UPDATED,
             ApplicationFacade.CANCEL_SELECTED,
@@ -55,8 +56,11 @@ export class UserListMediator extends Mediator {
      */
     handleNotification(notification) {
         switch(notification.name) {
+            case ApplicationFacade.LIST_USERS:
+                this.component.setUsers(notification.body);
+                break;
             case ApplicationFacade.USER_SAVED:
-                this.component.forceUpdate();
+                this.component.addUser(notification.body);
                 break;
 
             case ApplicationFacade.USER_UPDATED:
