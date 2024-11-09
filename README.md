@@ -2,15 +2,17 @@
 
 This demo illustrates techniques for performing routine client-side maintenance operations in a PureMVC-based application.
 
-## Branches
-* [Main]() - vanilla version
-* [Integrated]() - with [PureMVC JS Microservice]()
-* Redux Toolkit
-
 ## Installation
 ```shell
+git clone https://github.com/PureMVC/puremvc-js-demo-microservice-employeeadmin
+cd puremvc-js-demo-microservice-employeeadmin
+docker compose up
+
+cd ..
+
+git clone https://github.com/PureMVC/puremvc-js-demo-react-employeeadmin 
 cd puremvc-js-demo-react-employeeadmin 
-npm install && npm run build && npm run preview
+npm start
 ```
 
 ## Screenshot

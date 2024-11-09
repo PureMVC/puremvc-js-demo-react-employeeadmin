@@ -9,38 +9,35 @@
 import styles from "../../../css/form.module.css"
 import {useEffect, useMemo, useState} from "react";
 import {ApplicationConstants} from "../../ApplicationConstants";
-import {UserVO} from "../../model/valueObject/UserVO.js";
-
-export class UserFormEvents {
-	static SAVE   = "events/user/form/save";
-	static UPDATE = "events/user/form/update";
-	static CANCEL = "events/user/form/cancel";
-}
+import {User} from "../../model/valueObject/User";
+import {Department} from "../../model/valueObject/Department.js";
 
 export const UserForm = () => {
 
 	const [departments, setDepartments] = useState([]); // UI Data
-	const [user, setUser] = useState(new UserVO()); // UserVO/Service/Input/Form Data
-	const [editMode, setEditMode] = useState(false);
+	const [user, setUser] = useState(new User()); // User/Service/Input/Form Data
 	const [error, setError] = useState(null);
 
 	/**
 	 * @typedef {Object} UserForm
-	 * @property {(departments: DeptEnum[]) => void} setDepartments
-	 * @property {(user: UserVO) => void} setUser
+	 * @property {string} SAVE
+	 * @property {string} UPDATE
+	 * @property {string} CANCEL
+	 * @property {(departments: Department[]) => void} setDepartments
+	 * @property {(user: User) => void} setUser
 	 * @property {(error: string) => void} setError
 	 * @property {() => void} reset
 	 */
 	const component = useMemo(() => ({
+		SAVE: "events/user/form/save",
+		UPDATE: "events/user/form/update",
+		CANCEL: "events/user/form/cancel",
+
 		setDepartments: setDepartments,
-		setUser: (u) => {
-			setEditMode(u.username !== "");
-			setUser(u);
-		},
+		setUser: setUser,
 		setError: setError,
 		reset: () => {
-			setEditMode(false);
-			setUser(new UserVO());
+			setUser(new User());
 		}
 	}), [setDepartments, setUser, setError]);
 
@@ -54,21 +51,20 @@ export const UserForm = () => {
 	const onChange = (event) => {
 		const {id, value} = event.target;
 		setUser(state => ({ // update fields
-			...state, [id]: id === "department" ? departments.find(d => d.id === parseInt(value, 10)) : value
+			...state, [id]: id === "department" ? departments.find(d => d.id === parseInt(value)) : value
 		}));
 	}
 
 	const onSave = () => {
 		delete user.roles; // update user fields only without roles, roles are saved/updated separately.
-		const type = editMode === false ? UserFormEvents.SAVE : UserFormEvents.UPDATE;
+		const type = user.id === 0 ? component.SAVE : component.UPDATE;
 		dispatchEvent(new CustomEvent(type, {detail: user}));
-		setUser(new UserVO());
+		setUser(new User());
 	}
 
 	const onCancel = () => {
-		setEditMode(false);
-		setUser(new UserVO());
-		dispatchEvent(new CustomEvent(UserFormEvents.CANCEL));
+		setUser(new User());
+		dispatchEvent(new CustomEvent(component.CANCEL));
 	}
 
 	return (
@@ -112,6 +108,7 @@ export const UserForm = () => {
 							<li>
 								<label htmlFor="department">Department:</label>
 								<select id="department" value={user.department.id} onChange={onChange}>
+									<option value={Department.NONE_SELECTED.id}>{Department.NONE_SELECTED.name}</option>
 									{departments.map(department => (
 										<option key={`department_${department.id}`}
 										        value={department.id}>{department.name}</option>
@@ -121,8 +118,8 @@ export const UserForm = () => {
 						</ul>
 					</main>
 					<footer>
-						<button className="primary" disabled={!UserVO.isValid(user)}
-						        onClick={() => onSave()}>{editMode === false ? "Save" : "Update"}</button>
+						<button className="primary" disabled={!User.isValid(user)}
+						        onClick={() => onSave()}>{user.id === 0 ? "Save" : "Update"}</button>
 						<button className="outline-primary" onClick={() => onCancel()}>Cancel
 						</button>
 					</footer>

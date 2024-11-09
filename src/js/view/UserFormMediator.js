@@ -9,7 +9,6 @@
 import {Mediator} from "@puremvc/puremvc-js-multicore-framework";
 import {ApplicationFacade} from "../ApplicationFacade";
 import {UserProxy} from "../model/UserProxy";
-import {UserFormEvents} from "./components/UserForm.jsx";
 
 export class UserFormMediator extends Mediator {
 
@@ -17,12 +16,13 @@ export class UserFormMediator extends Mediator {
 
     listeners = null;
 
+    /** @param {UserForm} component */
     constructor(component) {
         super(UserFormMediator.NAME, component);
         this.listeners = {
-            [UserFormEvents.SAVE]: event => this.onSave(event.detail),
-            [UserFormEvents.UPDATE]: event => this.onUpdate(event.detail),
-            [UserFormEvents.CANCEL]: event => this.onCancel(event.detail)
+            [component.SAVE]: event => this.onSave(event.detail),
+            [component.UPDATE]: event => this.onUpdate(event.detail),
+            [component.CANCEL]: event => this.onCancel(event.detail)
         };
     }
 
@@ -63,7 +63,7 @@ export class UserFormMediator extends Mediator {
                 break;
 
             case ApplicationFacade.USER_SELECTED:
-                this.userProxy.findUserByUsername(notification.body.username)
+                this.userProxy.findUserById(notification.body.id)
                     .then(user => this.component.setUser(user))
                     .catch(error => this.component.setError(error));
                 break;
@@ -74,8 +74,8 @@ export class UserFormMediator extends Mediator {
     }
 
     async onSave(user) {
-        await this.userProxy.add(user);
-        this.facade.sendNotification(ApplicationFacade.USER_SAVED, user);
+        const u = await this.userProxy.add(user);
+        this.facade.sendNotification(ApplicationFacade.USER_SAVED, u);
     }
 
     async onUpdate(user) {

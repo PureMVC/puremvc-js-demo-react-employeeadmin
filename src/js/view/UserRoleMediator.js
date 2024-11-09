@@ -9,7 +9,6 @@
 import {Mediator} from "@puremvc/puremvc-js-multicore-framework";
 import {ApplicationFacade} from "../ApplicationFacade";
 import {RoleProxy} from "../model/RoleProxy";
-import {UserRoleEvents} from "./components/UserRole.jsx";
 
 export class UserRoleMediator extends Mediator {
 
@@ -17,10 +16,11 @@ export class UserRoleMediator extends Mediator {
 
     listeners = null;
 
+    /** @param {UserRole} component */
     constructor(component) {
         super(UserRoleMediator.NAME, component);
         this.listeners = {
-            [UserRoleEvents.UPDATE]: event => this.onChange(event.detail)
+            [component.UPDATE]: event => this.onChange(event.detail)
         };
     }
 
@@ -57,9 +57,9 @@ export class UserRoleMediator extends Mediator {
                 break;
 
             case ApplicationFacade.USER_SELECTED:
-                this.roleProxy.findRolesByUsername(notification.body.username)
+                this.roleProxy.findRolesById(notification.body.id)
                     .then(result => {
-                        notification.body.roles = result.roles;
+                        notification.body.roles = result;
                         this.component.setUser(notification.body);
                     })
                     .catch(error => this.component.setError(error));
@@ -75,7 +75,7 @@ export class UserRoleMediator extends Mediator {
     }
 
     async onChange(user) {
-        await this.roleProxy.updateRolesByUsername(user.username, user.roles);
+        await this.roleProxy.updateRolesById(user.id, user.roles);
         this.facade.sendNotification(ApplicationFacade.ROLE_UPDATE, user);
     }
 
