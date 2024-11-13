@@ -9,13 +9,13 @@
 import styles from "../../../css/list.module.css"
 import {useEffect, useMemo, useState} from "react";
 
-export class UserListEvents {
-    static MOUNTED = "events/user/list/mounted";
-    static UNMOUNTED = "events/user/list/unmounted";
-    static NEW   = "events/user/list/new";
-    static SELECT= "events/user/list/select";
-    static DELETE= "events/user/list/delete";
-}
+export const UserListEvents = {
+    MOUNTED: "events/user/list/mounted",
+    UNMOUNTED: "events/user/list/unmounted",
+    NEW: "events/user/list/new",
+    SELECT: "events/user/list/select",
+    DELETE: "events/user/list/delete"
+};
 
 export const UserList = () => {
 

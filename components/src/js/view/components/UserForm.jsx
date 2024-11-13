@@ -9,13 +9,13 @@
 import styles from "../../../css/form.module.css"
 import {useEffect, useMemo, useState} from "react";
 
-export class UserFormEvents {
-	static MOUNTED = "events/user/form/mounted";
-	static UNMOUNTED = "events/user/form/unmounted";
-	static SAVE   = "events/user/form/save";
-	static UPDATE = "events/user/form/update";
-	static CANCEL = "events/user/form/cancel";
-}
+export const UserFormEvents = {
+	MOUNTED: "events/user/form/mounted",
+	UNMOUNTED: "events/user/form/unmounted",
+	SAVE: "events/user/form/save",
+	UPDATE: "events/user/form/update",
+	CANCEL: "events/user/form/cancel"
+};
 
 export const UserForm = () => {
 

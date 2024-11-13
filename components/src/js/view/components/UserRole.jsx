@@ -9,10 +9,10 @@
 import styles from "../../../css/role.module.css"
 import {useEffect, useMemo, useState} from "react";
 
-export class UserRoleEvents {
-	static MOUNTED = "events/user/roles/mounted";
-	static UNMOUNTED = "events/user/roles/unmounted";
-	static UPDATE = "events/user/role/update";
+export const UserRoleEvents = {
+	MOUNTED: "events/user/roles/mounted",
+	UNMOUNTED: "events/user/roles/unmounted",
+	UPDATE: "events/user/role/update"
 }
 
 export const UserRole = () => {

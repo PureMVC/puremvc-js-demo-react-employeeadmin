@@ -11,11 +11,11 @@ export default defineConfig({
       filename: "remoteEntry.js",
       exposes: {
         "./UserList": "./src/js/view/components/UserList",
-        "./UserListEvents": "./src/js/view/components/UserListEvents",
+        "./UserListEvents": "./src/js/view/components/UserList",
         "./UserForm": "./src/js/view/components/UserForm",
-        "./UserFormEvents": "./src/js/view/components/UserFormEvents",
+        "./UserFormEvents": "./src/js/view/components/UserForm",
         "./UserRole": "./src/js/view/components/UserRole",
-        "./UserRoleEvents": "./src/js/view/components/UserRoleEvents",
+        "./UserRoleEvents": "./src/js/view/components/UserRole",
       },
       shared: ["react", "react-dom"],
     })
