@@ -40,7 +40,7 @@ export const UserForm = () => {
 		setError: setError,
 		reset: () => {
 			setEditMode(false);
-			setUser(new UserVO());
+			setUser({});
 		}
 	}), [setDepartments, setUser, setError]);
 
@@ -62,12 +62,12 @@ export const UserForm = () => {
 		delete user.roles; // update user fields only without roles, roles are saved/updated separately.
 		const type = editMode === false ? UserFormEvents.SAVE : UserFormEvents.UPDATE;
 		dispatchEvent(new CustomEvent(type, {detail: user}));
-		setUser(new UserVO());
+		setUser({});
 	}
 
 	const onCancel = () => {
 		setEditMode(false);
-		setUser(new UserVO());
+		setUser({});
 		dispatchEvent(new CustomEvent(UserFormEvents.CANCEL));
 	}
 
@@ -111,12 +111,12 @@ export const UserForm = () => {
 							</li>
 							<li>
 								<label htmlFor="department">Department:</label>
-								<select id="department" value={user.department.id} onChange={onChange}>
-									{departments.map(department => (
-										<option key={`department_${department.id}`}
-										        value={department.id}>{department.name}</option>
-									))}
-								</select>
+								{/*<select id="department" value={user.department.id} onChange={onChange}>*/}
+								{/*	{departments.map(department => (*/}
+								{/*		<option key={`department_${department.id}`}*/}
+								{/*		        value={department.id}>{department.name}</option>*/}
+								{/*	))}*/}
+								{/*</select>*/}
 							</li>
 						</ul>
 					</main>
