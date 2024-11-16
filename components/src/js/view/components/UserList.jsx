@@ -8,27 +8,20 @@
 
 import styles from "../../../css/list.module.css"
 import {useEffect, useMemo, useState} from "react";
-
-export const UserListEvents = {
-    MOUNTED: "events/user/list/mounted",
-    UNMOUNTED: "events/user/list/unmounted",
-    NEW: "events/user/list/new",
-    SELECT: "events/user/list/select",
-    DELETE: "events/user/list/delete"
-};
+import {UserListEvents} from "../events/UserListEvents.js";
 
 export const UserList = () => {
 
-    const [users, setUsers] = useState([]); // UserVO/Service Data
+    const [users, setUsers] = useState([]); // User/Service Data
     const [selectedUser, setSelectedUser] = useState(null); // Input/Form Data
     const [error, setError] = useState(null);
 
     /**
      * @typedef {Object} UserList
-     * @property {(users: UserVO[]) => void} setUsers
-     * @property {(user: UserVO) => void} addUser
-     * @property {(user: UserVO) => void} updateUser
-     * @property {(user: UserVO) => void} updateRoles
+     * @property {(users: User[]) => void} setUsers
+     * @property {(user: User) => void} addUser
+     * @property {(user: User) => void} updateUser
+     * @property {(user: User) => void} updateRoles
      * @property {() => void} deSelect
      * @property {() => void} forceUpdate
      * @property {(error: string) => void} setError

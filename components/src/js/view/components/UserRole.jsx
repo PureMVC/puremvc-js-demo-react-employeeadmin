@@ -8,25 +8,20 @@
 
 import styles from "../../../css/role.module.css"
 import {useEffect, useMemo, useState} from "react";
-
-export const UserRoleEvents = {
-	MOUNTED: "events/user/roles/mounted",
-	UNMOUNTED: "events/user/roles/unmounted",
-	UPDATE: "events/user/role/update"
-}
+import {UserRoleEvents} from "../events/UserRoleEvents.js";
 
 export const UserRole = () => {
 
 	const NONE_SELECTED = {id: 0, name: "---NONE_SELECTED---"};
 
-	const [roles, setRoles] = useState(/** @type RoleEnum[] */ []); // UI Data
-	const [user, setUser] = useState(/** @type UserVO */ null); // UserVO/Service Data
+	const [roles, setRoles] = useState(/** @type {id: number, name: string}[] */ []); // UI Data
+	const [user, setUser] = useState(/** @type User */ null); // User/Service Data
 	const [role, setRole] = useState(NONE_SELECTED); // Input/Form Data
 	const [error, setError] = useState(null);
 
 	/**
 	 * @typedef {Object} UserRole
-	 * @property {(roles: RoleEnum[]) => void} setRoles
+	 * @property {(roles: {id: number, name: string}[]) => void} setRoles
 	 * @property {(user: User) => void} setUser
 	 * @property {(error: string) => void} setError
 	 * @property {() => void} reset
